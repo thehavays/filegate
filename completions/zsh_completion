@@ -1,0 +1,19 @@
+#compdef fgate
+_fgate() {
+    local state line
+    _arguments '1: :_fgate_subcommands' '*:: :->args'
+    case $state in
+        args)
+            case $line[1] in
+                add) _arguments '--host:host:' '--port:port:' '--user:user:' '(-p --protocol)'{-p,--protocol}':protocol:(sftp ftp ftps smb)' '(-k --key)'{-k,--key}':key:_files' '--share:share:' '--domain:domain:' ;;
+                remove|test|shell) local servers; servers=(${(f)"$(fgate list --names-only 2>/dev/null)"}); _describe 'server' servers ;;
+                pull) case $CURRENT in 2) local servers; servers=(${(f)"$(fgate list --names-only 2>/dev/null)"}); _describe 'server' servers ;; 3) local completions; completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[3]} 2>/dev/null)"}); _describe 'remote path' completions ;; *) _files ;; esac ;;
+                push) case $CURRENT in 2) local servers; servers=(${(f)"$(fgate list --names-only 2>/dev/null)"}); _describe 'server' servers ;; 3) _files ;; *) local completions; completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[4]} 2>/dev/null)"}); _describe 'remote path' completions ;; esac ;;
+                install-completion) _arguments '--shell:shell:(bash zsh)' ;;
+            esac ;;
+    esac
+}
+_fgate_subcommands() {
+    local subcommands; subcommands=('list:List servers' 'add:Add server' 'remove:Remove server' 'test:Test connection' 'pull:Download' 'push:Upload' 'shell:Interactive shell' 'install-completion:Install completion'); _describe 'subcommand' subcommands
+}
+_fgate "$@"

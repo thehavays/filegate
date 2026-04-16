@@ -1,16 +1,17 @@
 name: filegate
 base: core22
 version: '1.0.0'
-summary: FileGate — Multi-protocol file server manager with TAB completion
+title: FileGate
+summary: Multi-protocol file server manager with TAB completion
 description: |
   FileGate is a powerful command-line tool to list, browse, pull, and push files
-  on remote file servers (SFTP, FTP, SMB) with full TAB path completion.
-  
-  Features:
-  - Multi-protocol: SSH/SFTP, FTP, FTPS, SMB2/3
-  - Secure auth: SSH key files + password via system keyring
-  - TAB completion: remote paths complete in both interactive and shell modes
-  - Interactive shell: 'fgate shell' opens a full REPL
+  across SFTP, FTP, and SMB servers. It features an interactive shell and
+  smart TAB completion for both local and remote paths.
+license: MIT
+contact: https://github.com/thehavays/filegate/issues
+issues: https://github.com/thehavays/filegate/issues
+source-code: https://github.com/thehavays/filegate
+website: https://github.com/thehavays/filegate
 
 grade: stable
 confinement: strict
@@ -22,9 +23,9 @@ apps:
     plugs:
       - network
       - network-bind
-      - password-manager-service
-      - ssh-keys
       - home
+      - ssh-keys
+      - password-manager-service
 
 parts:
   filegate:
@@ -35,23 +36,16 @@ parts:
       - smbprotocol
       - keyring
       - rich
+      - cryptography
     stage-packages:
       - libsecret-1-0
-    build-packages:
-      - libsecret-1-dev
-      - pkg-config
-      - python3-dev
-    prime:
-      - -bin/activate
-      - -bin/activate.csh
-      - -bin/activate.fish
 
-  # Helper to bundle bash completion
-  bash-completion:
+  completions:
     plugin: dump
-    source: .
-    override-build: |
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/bash-completion/completions
-      # We could generate it here, but fgate has a command for it.
-      # For now, we'll let the user run 'fgate install-completion' if they want.
-      # Or we can bundle a static one.
+    source: completions/
+    organize:
+      bash_completion: bash_completion
+      zsh_completion: share/zsh/site-functions/_fgate
+    prime:
+      - bash_completion
+      - share/zsh/site-functions/_fgate
