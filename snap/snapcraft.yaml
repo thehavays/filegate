@@ -1,11 +1,6 @@
 name: filegate
 base: core22
 version: '1.0.0'
-
-package-repositories:
-  - type: apt
-    url: http://mirror.ubuntu.com/mirrors.txt
-
 summary: FileGate — Multi-protocol file server manager with TAB completion
 description: |
   FileGate is a powerful command-line tool to list, browse, pull, and push files
