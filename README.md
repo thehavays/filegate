@@ -22,6 +22,14 @@ pipx install .
 
 This installs the `fgate` command globally in an isolated environment.
 
+### 📦 Snap Store (Recommended for Linux)
+
+```bash
+sudo snap install filegate
+# Grant permission for system keyring access (required for passwords)
+sudo snap connect filegate:password-manager-service
+```
+
 ---
 
 ## Quick Start

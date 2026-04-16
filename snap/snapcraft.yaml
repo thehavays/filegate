@@ -1,0 +1,57 @@
+name: filegate
+base: core22
+version: '1.0.0'
+summary: FileGate — Multi-protocol file server manager with TAB completion
+description: |
+  FileGate is a powerful command-line tool to list, browse, pull, and push files
+  on remote file servers (SFTP, FTP, SMB) with full TAB path completion.
+  
+  Features:
+  - Multi-protocol: SSH/SFTP, FTP, FTPS, SMB2/3
+  - Secure auth: SSH key files + password via system keyring
+  - TAB completion: remote paths complete in both interactive and shell modes
+  - Interactive shell: 'fgate shell' opens a full REPL
+
+grade: stable
+confinement: strict
+
+apps:
+  fgate:
+    command: bin/fgate
+    completer: bash_completion
+    plugs:
+      - network
+      - network-bind
+      - password-manager-service
+      - ssh-keys
+      - home
+
+parts:
+  filegate:
+    plugin: python
+    source: .
+    python-packages:
+      - paramiko
+      - smbprotocol
+      - keyring
+      - rich
+    stage-packages:
+      - libsecret-1-0
+    build-packages:
+      - libsecret-1-dev
+      - pkg-config
+      - python3-dev
+    prime:
+      - -bin/activate
+      - -bin/activate.csh
+      - -bin/activate.fish
+
+  # Helper to bundle bash completion
+  bash-completion:
+    plugin: dump
+    source: .
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/bash-completion/completions
+      # We could generate it here, but fgate has a command for it.
+      # For now, we'll let the user run 'fgate install-completion' if they want.
+      # Or we can bundle a static one.
