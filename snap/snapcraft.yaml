@@ -9,6 +9,11 @@ description: |
   smart TAB completion for both local and remote paths.
 license: MIT
 contact: https://github.com/thehavays/filegate/issues
+
+lint:
+  ignore:
+    - library: [usr/lib/x86_64-linux-gnu/libsecret-1.so.0.0.0]
+
 issues: https://github.com/thehavays/filegate/issues
 source-code: https://github.com/thehavays/filegate
 website: https://github.com/thehavays/filegate
