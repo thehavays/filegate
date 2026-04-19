@@ -191,9 +191,30 @@ _fgate_complete() {
     fi
 
     local subcommand="${words[1]}"
-    local commands="list add remove test pull push shell install-completion"
+    local commands="list add remove test pull push copy shell install-completion"
 
     case "$subcommand" in
+        copy)
+            local pos=$((cword - 1))
+            if [[ "$cur" == *:* ]]; then
+                # Complete remote path on the chosen server
+                local server="${cur%%:*}"
+                local rpath="${cur#*:}"
+                local completions
+                mapfile -t completions < <(fgate _complete remote "$server" "$rpath" 2>/dev/null)
+                COMPREPLY=()
+                for comp in "${completions[@]}"; do
+                    COMPREPLY+=("${server}:${comp}")
+                done
+                [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
+            else
+                # Complete server name + colon
+                local servers
+                servers=$(fgate list --names-only 2>/dev/null)
+                COMPREPLY=($(compgen -W "$servers" -S ":" -- "$cur"))
+                compopt -o nospace
+            fi
+            ;;
         add)
             case "$prev" in
                 --protocol|-p)
@@ -325,6 +346,25 @@ _fgate() {
                             ;;
                     esac
                     ;;
+                copy)
+                    if [[ "$words[$CURRENT]" == *:* ]]; then
+                        local server="${words[$CURRENT]%%:*}"
+                        local rpath="${words[$CURRENT]#*:}"
+                        local completions
+                        completions=(${(f)"$(fgate _complete remote $server $rpath 2>/dev/null)"})
+                        # Prepend server name to matches
+                        local -a matches
+                        for c in $completions; do matches+=("${server}:$c"); done
+                        _describe 'remote path' matches
+                    else
+                        local servers
+                        servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                        # Add colon suffix to server names
+                        local -a server_choices
+                        for s in $servers; do server_choices+=("$s:"); done
+                        _describe 'server' server_choices
+                    fi
+                    ;;
                 install-completion)
                     _arguments '--shell[Shell type]:shell:(bash zsh)'
                     ;;
@@ -342,6 +382,7 @@ _fgate_subcommands() {
         'test:Test connection to a server'
         'pull:Download a file or directory from a server'
         'push:Upload a file or directory to a server'
+        'copy:Copy files between servers (remote-to-remote)'
         'shell:Open an interactive shell on a server'
         'install-completion:Install shell TAB completion'
     )

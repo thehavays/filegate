@@ -110,10 +110,10 @@ class BaseServer(ABC):
         remote_path: str,
         progress: Optional[ProgressCallback] = None,
     ) -> None:
-    """
-    Upload *local_path* to *remote_path*.
-    If local_path is a directory, upload it recursively.
-    """
+        """
+        Upload *local_path* to *remote_path*.
+        If local_path is a directory, upload it recursively.
+        """
 
     @abstractmethod
     def open_file(self, path: str, mode: str = 'rb'):

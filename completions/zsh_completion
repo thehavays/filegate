@@ -1,19 +1,107 @@
-#compdef fgate
+#compdef fsm
+# FileGate zsh completion
+
 _fgate() {
     local state line
-    _arguments '1: :_fgate_subcommands' '*:: :->args'
+    typeset -A opt_args
+
+    _arguments \
+        '1: :_fgate_subcommands' \
+        '*:: :->args'
+
     case $state in
         args)
             case $line[1] in
-                add) _arguments '--host:host:' '--port:port:' '--user:user:' '(-p --protocol)'{-p,--protocol}':protocol:(sftp ftp ftps smb)' '(-k --key)'{-k,--key}':key:_files' '--share:share:' '--domain:domain:' ;;
-                remove|test|shell) local servers; servers=(${(f)"$(fgate list --names-only 2>/dev/null)"}); _describe 'server' servers ;;
-                pull) case $CURRENT in 2) local servers; servers=(${(f)"$(fgate list --names-only 2>/dev/null)"}); _describe 'server' servers ;; 3) local completions; completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[3]} 2>/dev/null)"}); _describe 'remote path' completions ;; *) _files ;; esac ;;
-                push) case $CURRENT in 2) local servers; servers=(${(f)"$(fgate list --names-only 2>/dev/null)"}); _describe 'server' servers ;; 3) _files ;; *) local completions; completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[4]} 2>/dev/null)"}); _describe 'remote path' completions ;; esac ;;
-                install-completion) _arguments '--shell:shell:(bash zsh)' ;;
-            esac ;;
+                add)
+                    _arguments \
+                        '--host[Server hostname or IP]:host:' \
+                        '--port[Port number]:port:' \
+                        '--user[Username]:user:' \
+                        {-p,--protocol}'[Protocol]:protocol:(sftp ftp ftps smb)' \
+                        {-k,--key}'[Path to SSH private key]:key:_files' \
+                        '--share[Default SMB share name]:share:' \
+                        '--domain[Windows/AD domain for SMB]:domain:'
+                    ;;
+                remove|test|shell)
+                    local servers
+                    servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                    _describe 'server' servers
+                    ;;
+                pull)
+                    case $CURRENT in
+                        2)
+                            local servers
+                            servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                            _describe 'server' servers
+                            ;;
+                        3)
+                            local completions
+                            completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[3]} 2>/dev/null)"})
+                            _describe 'remote path' completions
+                            ;;
+                        *)
+                            _files
+                            ;;
+                    esac
+                    ;;
+                push)
+                    case $CURRENT in
+                        2)
+                            local servers
+                            servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                            _describe 'server' servers
+                            ;;
+                        3)
+                            _files
+                            ;;
+                        *)
+                            local completions
+                            completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[4]} 2>/dev/null)"})
+                            _describe 'remote path' completions
+                            ;;
+                    esac
+                    ;;
+                copy)
+                    if [[ "$words[$CURRENT]" == *:* ]]; then
+                        local server="${words[$CURRENT]%%:*}"
+                        local rpath="${words[$CURRENT]#*:}"
+                        local completions
+                        completions=(${(f)"$(fgate _complete remote $server $rpath 2>/dev/null)"})
+                        # Prepend server name to matches
+                        local -a matches
+                        for c in $completions; do matches+=("${server}:$c"); done
+                        _describe 'remote path' matches
+                    else
+                        local servers
+                        servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                        # Add colon suffix to server names
+                        local -a server_choices
+                        for s in $servers; do server_choices+=("$s:"); done
+                        _describe 'server' server_choices
+                    fi
+                    ;;
+                install-completion)
+                    _arguments '--shell[Shell type]:shell:(bash zsh)'
+                    ;;
+            esac
+            ;;
     esac
 }
+
 _fgate_subcommands() {
-    local subcommands; subcommands=('list:List servers' 'add:Add server' 'remove:Remove server' 'test:Test connection' 'pull:Download' 'push:Upload' 'shell:Interactive shell' 'install-completion:Install completion'); _describe 'subcommand' subcommands
+    local subcommands
+    subcommands=(
+        'list:List all registered servers and their status'
+        'add:Register a new server'
+        'remove:Remove a registered server'
+        'test:Test connection to a server'
+        'pull:Download a file or directory from a server'
+        'push:Upload a file or directory to a server'
+        'copy:Copy files between servers (remote-to-remote)'
+        'shell:Open an interactive shell on a server'
+        'install-completion:Install shell TAB completion'
+    )
+    _describe 'subcommand' subcommands
 }
+
 _fgate "$@"

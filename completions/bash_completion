@@ -1,7 +1,12 @@
 # FileGate bash completion
+# Source this file or place it in /etc/bash_completion.d/fgate
+
+# ── Helper: directory-aware local file completion ─────────────────────────────
+# Appends '/' to directories so TAB keeps drilling into subdirs without a space.
 _fgate_filedir() {
     local cur="$1"
     if declare -f _filedir > /dev/null 2>&1; then
+        # Use bash-completion library if present (handles edge-cases best)
         _filedir
     else
         local -a _matches=()
@@ -10,11 +15,14 @@ _fgate_filedir() {
             _matches+=("$_f")
         done < <(compgen -f -- "$cur")
         COMPREPLY=("${_matches[@]}")
+        # Single directory match → no trailing space so user can keep tabbing in
         [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
     fi
 }
+
 _fgate_complete() {
     local cur prev words cword
+    # Use bash-completion library if available
     if declare -f _init_completion > /dev/null 2>&1; then
         _init_completion || return
     else
@@ -23,36 +31,93 @@ _fgate_complete() {
         words=("${COMP_WORDS[@]}")
         cword=$COMP_CWORD
     fi
+
     local subcommand="${words[1]}"
-    local commands="list add remove test pull push shell install-completion"
+    local commands="list add remove test pull push copy shell install-completion"
+
     case "$subcommand" in
+        copy)
+            local pos=$((cword - 1))
+            if [[ "$cur" == *:* ]]; then
+                # Complete remote path on the chosen server
+                local server="${cur%%:*}"
+                local rpath="${cur#*:}"
+                local completions
+                mapfile -t completions < <(fgate _complete remote "$server" "$rpath" 2>/dev/null)
+                COMPREPLY=()
+                for comp in "${completions[@]}"; do
+                    COMPREPLY+=("${server}:${comp}")
+                done
+                [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
+            else
+                # Complete server name + colon
+                local servers
+                servers=$(fgate list --names-only 2>/dev/null)
+                COMPREPLY=($(compgen -W "$servers" -S ":" -- "$cur"))
+                compopt -o nospace
+            fi
+            ;;
         add)
             case "$prev" in
-                --protocol|-p) COMPREPLY=($(compgen -W "sftp ftp ftps smb" -- "$cur")) ;;
-                --key|-k) _fgate_filedir "$cur" ;;
-                *) COMPREPLY=($(compgen -W "--host --port --user --protocol --key --share --domain" -- "$cur")) ;;
-            esac ;;
-        remove|test|shell) COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur")) ;;
+                --protocol|-p)
+                    COMPREPLY=($(compgen -W "sftp ftp ftps smb" -- "$cur"))
+                    ;;
+                --key|-k)
+                    _fgate_filedir "$cur"
+                    ;;
+                *)
+                    COMPREPLY=($(compgen -W "--host --port --user --protocol --key --share --domain" -- "$cur"))
+                    ;;
+            esac
+            ;;
+
+        remove|test|shell)
+            COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+            ;;
+
         pull)
             local pos=$((cword - 1))
-            if [[ $pos -eq 1 ]]; then COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+            if [[ $pos -eq 1 ]]; then
+                # Complete server name
+                COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
+                # Complete remote path on the chosen server
                 local server="${words[2]}"
                 mapfile -t COMPREPLY < <(fgate _complete remote "$server" "$cur" 2>/dev/null)
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
-            else _fgate_filedir "$cur"
-            fi ;;
+            else
+                # Complete local destination (directory-aware)
+                _fgate_filedir "$cur"
+            fi
+            ;;
+
         push)
             local pos=$((cword - 1))
-            if [[ $pos -eq 1 ]]; then COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
-            elif [[ $pos -eq 2 ]]; then _fgate_filedir "$cur"
+            if [[ $pos -eq 1 ]]; then
+                COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+            elif [[ $pos -eq 2 ]]; then
+                # Complete local source (directory-aware)
+                _fgate_filedir "$cur"
             else
+                # Complete remote destination
                 local server="${words[2]}"
                 mapfile -t COMPREPLY < <(fgate _complete remote "$server" "$cur" 2>/dev/null)
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
-            fi ;;
-        install-completion) COMPREPLY=($(compgen -W "--shell" -- "$cur")) ;;
-        *) COMPREPLY=($(compgen -W "$commands" -- "$cur")) ;;
+            fi
+            ;;
+
+        install-completion)
+            COMPREPLY=($(compgen -W "--shell" -- "$cur"))
+            ;;
+
+        "")
+            COMPREPLY=($(compgen -W "$commands" -- "$cur"))
+            ;;
+
+        *)
+            COMPREPLY=($(compgen -W "$commands" -- "$cur"))
+            ;;
     esac
 }
+
 complete -F _fgate_complete fgate
