@@ -58,6 +58,9 @@ fgate pull mynas
 # Upload a file
 fgate push mynas ./local_file.txt /home/admin/uploads/
 
+# Remote-to-remote copy (streaming or server-side)
+fgate copy mynas:/home/admin/data.zip backup:/archives/
+
 # Interactive shell
 fgate shell mynas
 # [mynas:/home/admin]> ls

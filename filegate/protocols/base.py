@@ -110,10 +110,28 @@ class BaseServer(ABC):
         remote_path: str,
         progress: Optional[ProgressCallback] = None,
     ) -> None:
+    """
+    Upload *local_path* to *remote_path*.
+    If local_path is a directory, upload it recursively.
+    """
+
+    @abstractmethod
+    def open_file(self, path: str, mode: str = 'rb'):
+        """Return a file-like object for the remote file."""
+
+    def copy_within(self, src: str, dst: str, progress: Optional[ProgressCallback] = None) -> None:
         """
-        Upload *local_path* to *remote_path*.
-        If local_path is a directory, upload it recursively.
+        Copy a file to a new location on the same server.
+        Default implementation uses streaming if not overridden by protocol optimization.
         """
+        with self.open_file(src, 'rb') as f_src:
+            # We don't know the size easily without stat, so progress might be limited
+            with self.open_file(dst, 'wb') as f_dst:
+                while True:
+                    chunk = f_src.read(64 * 1024)
+                    if not chunk:
+                        break
+                    f_dst.write(chunk)
 
     # ── Context manager ────────────────────────────────────────────────────────
 

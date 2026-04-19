@@ -144,6 +144,16 @@ class SMBServer(BaseServer):
         except Exception:
             return False
 
+    def open_file(self, path: str, mode: str = 'rb'):
+        return smbclient.open_file(self._unc(path), mode=mode)
+
+    def copy_within(self, src: str, dst: str, progress: Optional[ProgressCallback] = None) -> None:
+        """Optimized server-side copy using SMB2/3 FSCTL_SRV_COPYCHUNK."""
+        src_unc = self._unc(src)
+        dst_unc = self._unc(dst)
+        # smbclient.shutil.copyfile uses server-side copy if available
+        smb_shutil.copyfile(src_unc, dst_unc)
+
     # ── Transfer ───────────────────────────────────────────────────────────────
 
     def pull(

@@ -118,6 +118,20 @@ class SFTPServer(BaseServer):
         except IOError:
             return False
 
+    def open_file(self, path: str, mode: str = 'rb'):
+        return self._sftp.open(path, mode)
+
+    def copy_within(self, src: str, dst: str, progress: Optional[ProgressCallback] = None) -> None:
+        """Optimized server-side copy using SSH 'cp'."""
+        import shlex
+        # Try native copy first (fastest)
+        cmd = f"cp -r {shlex.quote(src)} {shlex.quote(dst)}"
+        stdin, stdout, stderr = self._ssh.exec_command(cmd)
+        err = stderr.read().decode().strip()
+        if err:
+            # Fallback to base streaming if cp fails (e.g. restricted shell)
+            super().copy_within(src, dst, progress)
+
     # ── Transfer ───────────────────────────────────────────────────────────────
 
     def pull(

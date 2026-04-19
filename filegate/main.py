@@ -81,6 +81,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p_push.add_argument('remote_path', nargs='?', default=None,
                         help='Remote destination (prompted with TAB if omitted)')
 
+    # ── copy ──────────────────────────────────────────────────────────────────
+    p_copy = sub.add_parser('copy', help='Copy files between servers (remote-to-remote)')
+    p_copy.add_argument('src', help='Source server and path (e.g. server1:/data/file.zip)')
+    p_copy.add_argument('dst', help='Destination server and path (e.g. server2:/backup/)')
+
     # ── shell ─────────────────────────────────────────────────────────────────
     p_shell = sub.add_parser('shell', help='Open an interactive shell on a server')
     p_shell.add_argument('name', help='Server name')
@@ -150,6 +155,11 @@ def main() -> None:
     elif cmd == 'push':
         from filegate.commands.push import cmd_push
         cmd_push(args)
+
+    # ── copy ──────────────────────────────────────────────────────────────────
+    elif cmd == 'copy':
+        from filegate.commands.copy import cmd_copy
+        cmd_copy(args)
 
     # ── shell ─────────────────────────────────────────────────────────────────
     elif cmd == 'shell':
