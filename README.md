@@ -1,26 +1,22 @@
+<p align="center">
+  <img src="snap/gui/icon.png" width="128" alt="FileGate Logo">
+</p>
+
 # 🗂 FileGate
 
-A powerful command-line tool to **list**, **browse**, **pull**, and **push** files on remote file servers — with full **TAB path completion** on remote paths.
+A powerful, high-performance command-line tool to **list**, **browse**, **pull**, **push**, and **copy** files across remote servers — with full **TAB path completion** and **streaming transfers**.
 
 ## Features
 
 - 🔌 **Multi-protocol**: SSH/SFTP, FTP, FTPS, SMB2/3
 - 🔑 **Secure auth**: SSH key files + password via system keyring (never stored in plaintext)
-- 📁 **TAB completion**: remote paths complete in both interactive and inline shell modes
+- 🚀 **High-Speed Copy**: Direct remote-to-remote transfers. Performs native server-side copy (intra-server) or memory-streaming (inter-server) to avoid local disk usage.
+- 📁 **TAB completion**: Remote paths complete in both interactive and inline shell modes (Bash/Zsh)
 - 🐚 **Interactive shell**: `fgate shell` opens a full REPL with `ls`, `cd`, `pull`, `push`, etc.
-- 📊 **Progress bars**: speed, ETA, and file size during all transfers
-- 📋 **Server list**: live connection status for all registered servers
-- 🔄 **Recursive**: pull/push entire directories
+- 📊 **Progress bars**: Live speed, ETA, and file size during all transfers
+- 🔄 **Recursive**: Pull/push/copy entire directories
 
 ---
-
-## Installation
-
-```bash
-pipx install .
-```
-
-This installs the `fgate` command globally in an isolated environment.
 
 ### 📦 Snap Store (Recommended for Linux)
 
@@ -28,6 +24,19 @@ This installs the `fgate` command globally in an isolated environment.
 sudo snap install filegate
 # Grant permission for system keyring access (required for passwords)
 sudo snap connect filegate:password-manager-service
+```
+
+### 🍎 Homebrew (Recommended for macOS)
+
+```bash
+brew tap thehavays/tap
+brew install filegate
+```
+
+### 🐍 Pipx (Python/Source)
+
+```bash
+pipx install .
 ```
 
 ---
