@@ -157,11 +157,11 @@ def restore_completion() -> None:
 
 def generate_bash_completion() -> str:
     return r"""# FileGate bash completion
-# Source this file or place it in /etc/bash_completion.d/fgate
+# Source this file or place it in /etc/bash_completion.d/filegate
 
 # ── Helper: directory-aware local file completion ─────────────────────────────
 # Appends '/' to directories so TAB keeps drilling into subdirs without a space.
-_fgate_filedir() {
+_filegate_filedir() {
     local cur="$1"
     if declare -f _filedir > /dev/null 2>&1; then
         # Use bash-completion library if present (handles edge-cases best)
@@ -178,7 +178,7 @@ _fgate_filedir() {
     fi
 }
 
-_fgate_complete() {
+_filegate_complete() {
     local cur prev words cword
     # Standard bash variables
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -205,7 +205,7 @@ _fgate_complete() {
                 local server="${cur%%:*}"
                 local rpath="${cur#*:}"
                 local completions
-                mapfile -t completions < <(fgate _complete remote "$server" "$rpath" 2>/dev/null)
+                mapfile -t completions < <("${COMP_WORDS[0]}" _complete remote "$server" "$rpath" 2>/dev/null)
                 COMPREPLY=()
                 for comp in "${completions[@]}"; do
                     COMPREPLY+=("${server}:${comp}")
@@ -219,7 +219,7 @@ _fgate_complete() {
             else
                 # Complete server name + colon
                 local servers
-                servers=$(fgate list --names-only 2>/dev/null)
+                servers=$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)
                 COMPREPLY=($(compgen -W "$servers" -S ":" -- "$cur"))
                 compopt -o nospace
             fi
@@ -230,7 +230,7 @@ _fgate_complete() {
                     COMPREPLY=($(compgen -W "sftp ftp ftps smb" -- "$cur"))
                     ;;
                 --key|-k)
-                    _fgate_filedir "$cur"
+                    _filegate_filedir "$cur"
                     ;;
                 *)
                     COMPREPLY=($(compgen -W "--host --port --user --protocol --key --share --domain" -- "$cur"))
@@ -239,36 +239,36 @@ _fgate_complete() {
             ;;
 
         remove|test|shell)
-            COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             ;;
 
         pull)
             local pos=$((cword - 1))
             if [[ $pos -eq 1 ]]; then
                 # Complete server name
-                COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+                COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
                 # Complete remote path on the chosen server
                 local server="${words[2]}"
-                mapfile -t COMPREPLY < <(fgate _complete remote "$server" "$cur" 2>/dev/null)
+                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             else
                 # Complete local destination (directory-aware)
-                _fgate_filedir "$cur"
+                _filegate_filedir "$cur"
             fi
             ;;
 
         push)
             local pos=$((cword - 1))
             if [[ $pos -eq 1 ]]; then
-                COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+                COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
                 # Complete local source (directory-aware)
-                _fgate_filedir "$cur"
+                _filegate_filedir "$cur"
             else
                 # Complete remote destination
                 local server="${words[2]}"
-                mapfile -t COMPREPLY < <(fgate _complete remote "$server" "$cur" 2>/dev/null)
+                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             fi
             ;;
@@ -287,20 +287,20 @@ _fgate_complete() {
     esac
 }
 
-complete -F _fgate_complete fgate
+complete -F _filegate_complete filegate fgate filegate.fgate
 """
 
 
 def generate_zsh_completion() -> str:
-    return r"""#compdef fsm
+    return r"""#compdef filegate fgate
 # FileGate zsh completion
 
-_fgate() {
+_filegate() {
     local state line
     typeset -A opt_args
 
     _arguments \
-        '1: :_fgate_subcommands' \
+        '1: :_filegate_subcommands' \
         '*:: :->args'
 
     case $state in
@@ -318,19 +318,19 @@ _fgate() {
                     ;;
                 remove|test|shell)
                     local servers
-                    servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                    servers=(${(f)"$($words[1] list --names-only 2>/dev/null)"})
                     _describe 'server' servers
                     ;;
                 pull)
                     case $CURRENT in
                         2)
                             local servers
-                            servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                            servers=(${(f)"$($words[1] list --names-only 2>/dev/null)"})
                             _describe 'server' servers
                             ;;
                         3)
                             local completions
-                            completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[3]} 2>/dev/null)"})
+                            completions=(${(f)"$($words[1] _complete remote ${words[2]} ${words[3]} 2>/dev/null)"})
                             _describe 'remote path' completions
                             ;;
                         *)
@@ -342,7 +342,7 @@ _fgate() {
                     case $CURRENT in
                         2)
                             local servers
-                            servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                            servers=(${(f)"$($words[1] list --names-only 2>/dev/null)"})
                             _describe 'server' servers
                             ;;
                         3)
@@ -350,7 +350,7 @@ _fgate() {
                             ;;
                         *)
                             local completions
-                            completions=(${(f)"$(fgate _complete remote ${words[2]} ${words[4]} 2>/dev/null)"})
+                            completions=(${(f)"$($words[1] _complete remote ${words[2]} ${words[4]} 2>/dev/null)"})
                             _describe 'remote path' completions
                             ;;
                     esac
@@ -360,14 +360,14 @@ _fgate() {
                         local server="${words[$CURRENT]%%:*}"
                         local rpath="${words[$CURRENT]#*:}"
                         local completions
-                        completions=(${(f)"$(fgate _complete remote $server $rpath 2>/dev/null)"})
+                        completions=(${(f)"$($words[1] _complete remote $server $rpath 2>/dev/null)"})
                         # Prepend server name to matches
                         local -a matches
                         for c in $completions; do matches+=("${server}:$c"); done
                         _describe 'remote path' matches
                     else
                         local servers
-                        servers=(${(f)"$(fgate list --names-only 2>/dev/null)"})
+                        servers=(${(f)"$($words[1] list --names-only 2>/dev/null)"})
                         # Add colon suffix to server names
                         local -a server_choices
                         for s in $servers; do server_choices+=("$s:"); done
@@ -382,7 +382,7 @@ _fgate() {
     esac
 }
 
-_fgate_subcommands() {
+_filegate_subcommands() {
     local subcommands
     subcommands=(
         'list:List all registered servers and their status'
@@ -398,7 +398,7 @@ _fgate_subcommands() {
     _describe 'subcommand' subcommands
 }
 
-_fgate "$@"
+_filegate "$@"
 """
 
 
@@ -412,11 +412,11 @@ def install_completion(shell: str) -> None:
 
     if shell == 'bash':
         script  = generate_bash_completion()
-        dest    = Path.home() / '.bash_completion.d' / 'fgate'
+        dest    = Path.home() / '.bash_completion.d' / 'filegate'
         source_hint = f'source "{dest}"  # add to ~/.bashrc'
     elif shell == 'zsh':
         script  = generate_zsh_completion()
-        dest    = Path.home() / '.zsh' / 'completions' / '_fgate'
+        dest    = Path.home() / '.zsh' / 'completions' / '_filegate'
         source_hint = f'fpath=("{dest.parent}" $fpath)  # add to ~/.zshrc, before compinit'
     else:
         console.print(f'[red]Unknown shell:[/] {shell}. Supported: bash, zsh')

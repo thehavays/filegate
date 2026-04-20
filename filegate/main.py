@@ -2,18 +2,18 @@
 main.py — FileGate CLI entry point.
 
 All subcommands:
-  fgate list                           List registered servers + live status
-  fgate add <name> --host … --user …   Register a new server
-  fgate remove <name>                  Remove a server
-  fgate test <name>                    Test connection
-  fgate pull <server> [remote] [local] Download files (interactive if omitted)
-  fgate push <server> [local] [remote] Upload files   (interactive if omitted)
-  fgate shell <name>                   Open interactive shell with TAB completion
-  fgate install-completion             Write bash/zsh completion script
+  filegate list                           List registered servers + live status
+  filegate add <name> --host … --user …   Register a new server
+  filegate remove <name>                  Remove a server
+  filegate test <name>                    Test connection
+  filegate pull <server> [remote] [local] Download files (interactive if omitted)
+  filegate push <server> [local] [remote] Upload files   (interactive if omitted)
+  filegate shell <name>                   Open interactive shell with TAB completion
+  filegate install-completion             Write bash/zsh completion script
 
 Hidden internal commands (used by shell completion scripts):
-  fgate _complete remote <server> <partial>   Print remote path completions
-  fgate list --names-only                     Print server names (one per line)
+  filegate _complete remote <server> <partial>   Print remote path completions
+  filegate list --names-only                     Print server names (one per line)
 """
 import argparse
 import getpass
@@ -22,7 +22,7 @@ import sys
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog='fgate',
+        prog='filegate',
         description='FileGate — connect, browse, pull and push files on remote servers.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

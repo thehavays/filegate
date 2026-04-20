@@ -1,9 +1,9 @@
 # FileGate bash completion
-# Source this file or place it in /etc/bash_completion.d/fgate
+# Source this file or place it in /etc/bash_completion.d/filegate
 
 # ── Helper: directory-aware local file completion ─────────────────────────────
 # Appends '/' to directories so TAB keeps drilling into subdirs without a space.
-_fgate_filedir() {
+_filegate_filedir() {
     local cur="$1"
     if declare -f _filedir > /dev/null 2>&1; then
         # Use bash-completion library if present (handles edge-cases best)
@@ -20,7 +20,7 @@ _fgate_filedir() {
     fi
 }
 
-_fgate_complete() {
+_filegate_complete() {
     local cur prev words cword
     # Use bash-completion library if available
     if declare -f _init_completion > /dev/null 2>&1; then
@@ -63,7 +63,7 @@ _fgate_complete() {
                     COMPREPLY=($(compgen -W "sftp ftp ftps smb" -- "$cur"))
                     ;;
                 --key|-k)
-                    _fgate_filedir "$cur"
+                    _filegate_filedir "$cur"
                     ;;
                 *)
                     COMPREPLY=($(compgen -W "--host --port --user --protocol --key --share --domain" -- "$cur"))
@@ -87,7 +87,7 @@ _fgate_complete() {
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             else
                 # Complete local destination (directory-aware)
-                _fgate_filedir "$cur"
+                _filegate_filedir "$cur"
             fi
             ;;
 
@@ -97,7 +97,7 @@ _fgate_complete() {
                 COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
                 # Complete local source (directory-aware)
-                _fgate_filedir "$cur"
+                _filegate_filedir "$cur"
             else
                 # Complete remote destination
                 local server="${words[2]}"
@@ -120,4 +120,5 @@ _fgate_complete() {
     esac
 }
 
-complete -F _fgate_complete fgate filegate filegate.fgate
+# Apply to all possible command names
+complete -F _filegate_complete filegate fgate filegate.fgate
