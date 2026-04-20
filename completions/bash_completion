@@ -43,7 +43,7 @@ _fgate_complete() {
                 local server="${cur%%:*}"
                 local rpath="${cur#*:}"
                 local completions
-                mapfile -t completions < <(fgate _complete remote "$server" "$rpath" 2>/dev/null)
+                mapfile -t completions < <("${COMP_WORDS[0]}" _complete remote "$server" "$rpath" 2>/dev/null)
                 COMPREPLY=()
                 for comp in "${completions[@]}"; do
                     COMPREPLY+=("${server}:${comp}")
@@ -52,7 +52,7 @@ _fgate_complete() {
             else
                 # Complete server name + colon
                 local servers
-                servers=$(fgate list --names-only 2>/dev/null)
+                servers=$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)
                 COMPREPLY=($(compgen -W "$servers" -S ":" -- "$cur"))
                 compopt -o nospace
             fi
@@ -72,18 +72,18 @@ _fgate_complete() {
             ;;
 
         remove|test|shell)
-            COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+            COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             ;;
 
         pull)
             local pos=$((cword - 1))
             if [[ $pos -eq 1 ]]; then
                 # Complete server name
-                COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+                COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
                 # Complete remote path on the chosen server
                 local server="${words[2]}"
-                mapfile -t COMPREPLY < <(fgate _complete remote "$server" "$cur" 2>/dev/null)
+                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             else
                 # Complete local destination (directory-aware)
@@ -94,14 +94,14 @@ _fgate_complete() {
         push)
             local pos=$((cword - 1))
             if [[ $pos -eq 1 ]]; then
-                COMPREPLY=($(compgen -W "$(fgate list --names-only 2>/dev/null)" -- "$cur"))
+                COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
                 # Complete local source (directory-aware)
                 _fgate_filedir "$cur"
             else
                 # Complete remote destination
                 local server="${words[2]}"
-                mapfile -t COMPREPLY < <(fgate _complete remote "$server" "$cur" 2>/dev/null)
+                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             fi
             ;;
@@ -120,4 +120,4 @@ _fgate_complete() {
     esac
 }
 
-complete -F _fgate_complete fgate
+complete -F _fgate_complete fgate filegate filegate.fgate
