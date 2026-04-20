@@ -58,42 +58,44 @@ pipx install .
 
 ## Quick Start
 
+You can use either `filegate` or the shorthand `fgate`. Both work identically!
+
 ```bash
 # Register servers
-fgate add mynas  --host 192.168.1.10 --user admin  --protocol sftp --key ~/.ssh/id_rsa
-fgate add backup --host 10.0.0.5     --user ftpuser --protocol ftp
-fgate add files  --host 10.0.0.20    --user user    --protocol smb  --share documents
+filegate add mynas  --host 192.168.1.10 --user admin  --protocol sftp --key ~/.ssh/id_rsa
+filegate add backup --host 10.0.0.5     --user ftpuser --protocol ftp
+filegate add files  --host 10.0.0.20    --user user    --protocol smb  --share documents
 
 # List all servers with status
-fgate list
+filegate list
 
 # Test a connection
-fgate test mynas
+filegate test mynas
 
 # Download a file (inline)
-fgate pull mynas /home/admin/report.pdf ./report.pdf
+filegate pull mynas /home/admin/report.pdf ./report.pdf
 
 # Download interactively with TAB completion
-fgate pull mynas
+filegate pull mynas
 # [mynas] Remote path> /home/admin/doc<TAB>
 # /home/admin/documents/
 # Local destination [./documents]: ./local_docs/
 
 # Upload a file
-fgate push mynas ./local_file.txt /home/admin/uploads/
+filegate push mynas ./local_file.txt /home/admin/uploads/
 
 # Remote-to-remote copy (streaming or server-side)
-fgate copy mynas:/home/admin/data.zip backup:/archives/
+filegate copy mynas:/home/admin/data.zip backup:/archives/
 
 # Interactive shell
-fgate shell mynas
-# [mynas:/home/admin]> ls
-# [mynas:/home/admin]> cd documents
-# [mynas:/home/admin/documents]> pull report.pdf
+filegate shell mynas
+# [filegate.mynas:/home/admin]> ls
+# [filegate.mynas:/home/admin]> cd documents
+# [filegate.mynas:/home/admin/documents]> pull report.pdf
 
-# Install TAB completion (add to .bashrc to make permanent)
-fgate install-completion --shell bash
-source ~/.bash_completion.d/fgate
+# Install TAB completion
+filegate install-completion --shell bash
+source ~/.bash_completion.d/filegate
 ```
 
 ---
