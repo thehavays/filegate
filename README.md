@@ -27,7 +27,7 @@ A powerful, high-performance command-line tool to **list**, **browse**, **pull**
 - 🔑 **Secure auth**: SSH key files + password via system keyring (never stored in plaintext)
 - 🚀 **High-Speed Copy**: Direct remote-to-remote transfers. Performs native server-side copy (intra-server) or memory-streaming (inter-server) to avoid local disk usage.
 - 📁 **TAB completion**: Remote paths complete in both interactive and inline shell modes (Bash/Zsh)
-- 🐚 **Interactive shell**: `fgate shell` opens a full REPL with `ls`, `cd`, `pull`, `push`, etc.
+- 🐚 **Interactive shell**: `filegate shell` opens a full REPL with `ls`, `cd`, `pull`, `push`, etc.
 - 📊 **Progress bars**: Live speed, ETA, and file size during all transfers
 - 🔄 **Recursive**: Pull/push/copy entire directories
 
@@ -104,14 +104,14 @@ source ~/.bash_completion.d/filegate
 
 | Command | Description |
 |---------|-------------|
-| `fgate list` | List registered servers with live status |
-| `fgate add <name> --host … --user … --protocol …` | Register a server |
-| `fgate remove <name>` | Remove a server |
-| `fgate test <name>` | Test connection to a server |
-| `fgate pull <server> [remote] [local]` | Download file/directory |
-| `fgate push <server> [local] [remote]` | Upload file/directory |
-| `fgate shell <name>` | Interactive shell with full TAB completion |
-| `fgate install-completion [--shell bash|zsh]` | Install shell completion |
+| `filegate list` | List registered servers with live status |
+| `filegate add <name> --host … --user … --protocol …` | Register a server |
+| `filegate remove <name>` | Remove a server |
+| `filegate test <name>` | Test connection to a server |
+| `filegate pull <server> [remote] [local]` | Download file/directory |
+| `filegate push <server> [local] [remote]` | Upload file/directory |
+| `filegate shell <name>` | Interactive shell with full TAB completion |
+| `filegate install-completion [--shell bash|zsh]` | Install shell completion |
 
 ---
 
@@ -129,13 +129,13 @@ source ~/.bash_completion.d/filegate
 ## TAB Completion Modes
 
 ### 1. Interactive mode (built-in, always works)
-When `remote_path` is omitted from `pull`/`push`, fgate prompts you interactively with TAB completion enabled on the remote server's filesystem.
+When `remote_path` is omitted from `pull`/`push`, `filegate` prompts you interactively with TAB completion enabled on the remote server's filesystem.
 
 ### 2. Shell-level completion (one-time setup)
-After running `fgate install-completion`, TAB completion works directly in your shell prompt:
+After running `filegate install-completion`, TAB completion works directly in your shell prompt:
 ```
-fgate pull mynas /home/admin/do<TAB>
-fgate pull mynas /home/admin/documents/
+filegate pull mynas /home/admin/do<TAB>
+filegate pull mynas /home/admin/documents/
 ```
 
 ---
@@ -151,5 +151,5 @@ Passwords are stored in your system keyring (GNOME Keyring, KWallet, etc.) — *
 
 | Shell | Completion | Notes |
 |-------|-----------|-------|
-| bash  | ✅ Full | Run `fgate install-completion --shell bash` |
-| zsh   | ✅ Full | Run `fgate install-completion --shell zsh` |
+| bash  | ✅ Full | Run `filegate install-completion --shell bash` |
+| zsh   | ✅ Full | Run `filegate install-completion --shell zsh` |

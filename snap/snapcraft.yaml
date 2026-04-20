@@ -51,7 +51,7 @@ parts:
     source: completions/
     organize:
       bash_completion: bash_completion
-      zsh_completion: share/zsh/site-functions/_fgate
+      _filegate: share/zsh/site-functions/_filegate
     prime:
       - bash_completion
-      - share/zsh/site-functions/_fgate
+      - share/zsh/site-functions/_filegate
