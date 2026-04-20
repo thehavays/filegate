@@ -2,6 +2,21 @@
   <img src="snap/gui/icon.png" width="128" alt="FileGate Logo">
 </p>
 
+<p align="center">
+  <a href="https://snapcraft.io/filegate">
+    <img src="https://snapcraft.io/filegate/badge.svg" alt="filegate">
+  </a>
+  <img src="https://img.shields.io/github/v/tag/thehavays/filegate?label=version" alt="version">
+  <img src="https://img.shields.io/github/license/thehavays/filegate" alt="license">
+  <img src="https://img.shields.io/github/repo-size/thehavays/filegate" alt="size">
+</p>
+
+<p align="center">
+  <a href="https://snapcraft.io/filegate">
+    <img src="https://snapcraft.io/en/dark/install.svg" alt="Get it from the Snap Store">
+  </a>
+</p>
+
 # 🗂 FileGate
 
 A powerful, high-performance command-line tool to **list**, **browse**, **pull**, **push**, and **copy** files across remote servers — with full **TAB path completion** and **streaming transfers**.
