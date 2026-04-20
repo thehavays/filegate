@@ -41,7 +41,7 @@ def _make_progress() -> Progress:
         TransferSpeedColumn(),
         TimeRemainingColumn(),
         console=console,
-        transient=True,
+        transient=False,
     )
 
 
@@ -120,25 +120,43 @@ def cmd_pull(args) -> None:
         local_path  = str(local_p / remote_name)
 
     # ── Transfer ───────────────────────────────────────────────────────────────
-    filename = remote_path.rstrip('/').split('/')[-1]
     console.print()
 
-    # We track bytes across calls via a mutable container
-    total_ref   = [0]
-    prog_ctx    = _make_progress()
-    task_id_ref = [None]
+    with _make_progress() as progress:
+        def _do_pull(r_path: str, l_path: str):
+            if server.isdir(r_path):
+                # Create local directory
+                Path(l_path).mkdir(parents=True, exist_ok=True)
+                
+                entries = server.listdir(r_path)
+                for entry in entries:
+                    # entry is now always an FSEntry object
+                    name = str(entry.name)
+                    
+                    # Skip hidden items like . and ..
+                    if name in ('.', '..'): continue
+                    
+                    sub_r = str(r_path).rstrip('/') + '/' + name
+                    sub_l = str(Path(l_path) / name)
+                    _do_pull(sub_r, sub_l)
+            else:
+                # It's a file
+                fname = Path(l_path).name
+                total_size = server.get_size(r_path)
+                task_id = progress.add_task(f"Pulling {fname}", total=total_size)
+                
+                def cb(transferred, total):
+                    progress.update(task_id, completed=transferred, total=total)
+                
+                # Ensure parent local dir exists
+                Path(l_path).parent.mkdir(parents=True, exist_ok=True)
+                server.pull(r_path, l_path, progress=cb)
 
-    def progress_cb(transferred: int, total: int) -> None:
-        if task_id_ref[0] is None:
-            task_id_ref[0] = prog_ctx.add_task(f'Pulling  {filename}', total=total)
-        prog_ctx.update(task_id_ref[0], completed=transferred, total=total)
-
-    try:
-        with prog_ctx:
-            server.pull(remote_path, local_path, progress=progress_cb)
-        console.print(f'[green]✓[/] Saved to [bold]{local_path}[/]')
-    except Exception as exc:
-        console.print(f'[red]✗ Pull failed:[/] {exc}')
-        sys.exit(1)
-    finally:
-        server.disconnect()
+        try:
+            _do_pull(remote_path, local_path)
+            console.print(f'[green]✓[/] Saved to [bold]{local_path}[/]')
+        except Exception as exc:
+            console.print(f'[red]✗ Pull failed:[/] {exc}')
+            sys.exit(1)
+        finally:
+            server.disconnect()

@@ -13,7 +13,7 @@ from typing import List, Optional
 
 import paramiko
 
-from .base import BaseServer, DirEntry, EntryType, ProgressCallback
+from .base import BaseServer, FSEntry, EntryType, ProgressCallback
 
 
 class SFTPServer(BaseServer):
@@ -77,11 +77,20 @@ class SFTPServer(BaseServer):
     def home(self) -> str:
         return self._sftp.normalize('.')
 
-    def listdir(self, path: str) -> List[DirEntry]:
-        entries: List[DirEntry] = []
+    def mkdir(self, path: str) -> None:
+        try:
+            self._sftp.mkdir(path)
+        except IOError:
+            pass # Ignore if already exists
+
+    def get_size(self, path: str) -> int:
+        return self._sftp.stat(path).st_size or 0
+
+    def listdir(self, path: str) -> List[FSEntry]:
+        entries: List[FSEntry] = []
         try:
             for attr in self._sftp.listdir_attr(path):
-                entry_path = path.rstrip('/') + '/' + attr.filename
+                entry_path = path.rstrip('/') + '/' + str(attr.filename)
                 mode = attr.st_mode or 0
                 if stat.S_ISDIR(mode):
                     etype = EntryType.DIR
@@ -92,8 +101,8 @@ class SFTPServer(BaseServer):
                 else:
                     etype = EntryType.UNKNOWN
                 entries.append(
-                    DirEntry(
-                        name=attr.filename,
+                    FSEntry(
+                        name=str(attr.filename),
                         path=entry_path,
                         type=etype,
                         size=attr.st_size,

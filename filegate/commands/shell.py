@@ -29,7 +29,7 @@ from rich          import box
 import filegate.config as cfg
 from filegate.completer import RemoteCompleter
 from filegate.protocols import get_server_instance
-from filegate.protocols.base import BaseServer, DirEntry, EntryType
+from filegate.protocols.base import BaseServer, FSEntry, EntryType
 
 console = Console()
 
@@ -63,7 +63,7 @@ def _make_progress() -> Progress:
     )
 
 
-def _print_listing(entries: List[DirEntry]) -> None:
+def _print_listing(entries: List[FSEntry]) -> None:
     table = Table(
         box=box.SIMPLE,
         show_header=True,

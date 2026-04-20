@@ -14,7 +14,7 @@ import smbclient
 import smbclient.shutil as smb_shutil
 from smbprotocol.exceptions import SMBException
 
-from .base import BaseServer, DirEntry, EntryType, ProgressCallback
+from .base import BaseServer, FSEntry, EntryType, ProgressCallback
 
 _CHUNK = 64 * 1024  # 64 KB copy buffer
 
@@ -91,21 +91,38 @@ class SMBServer(BaseServer):
             return f'/{self._default_share}'
         return '/'
 
-    def listdir(self, path: str) -> List[DirEntry]:
+    def mkdir(self, path: str) -> None:
+        try:
+            smbclient.mkdir(self._unc(path))
+        except Exception:
+            pass # Ignore if already exists
+
+    def get_size(self, path: str) -> int:
+        return smbclient.stat(self._unc(path)).st_size or 0
+
+    def listdir(self, path: str) -> List[FSEntry]:
         unc = self._unc(path)
 
-        # Guard: //host with no share is not browsable via smbclient
+        # If we are at the host root, list shares instead of directory contents
         if unc.rstrip('/') == f'//{self.host}':
-            raise ValueError(
-                "You are at the SMB server root — shares cannot be listed here.\n"
-                "  Use  [bold]cd <sharename>[/]  to enter a share  "
-                "(e.g. [bold cyan]cd software2[/])"
-            )
+            entries: List[FSEntry] = []
+            try:
+                # smbclient.list_shares returns a list of share names
+                for share in smbclient.list_shares(self.host):
+                    entries.append(FSEntry(
+                        name=str(share),
+                        path=f'/{share}',
+                        type=EntryType.DIR
+                    ))
+            except Exception:
+                pass
+            return sorted(entries, key=lambda e: e.name)
 
-        entries: List[DirEntry] = []
+        entries: List[FSEntry] = []
         try:
             for entry in smbclient.scandir(unc):
-                entry_unc  = unc.rstrip('/') + '/' + entry.name
+                name_str = str(entry.name)
+                entry_unc  = unc.rstrip('/') + '/' + name_str
                 entry_path = self._user_path(entry_unc)
                 is_dir = entry.is_dir()
                 is_link = entry.is_symlink()
@@ -117,8 +134,8 @@ class SMBServer(BaseServer):
                 except Exception:
                     size = mtime = None
 
-                entries.append(DirEntry(
-                    name=entry.name,
+                entries.append(FSEntry(
+                    name=name_str,
                     path=entry_path,
                     type=etype,
                     size=size,

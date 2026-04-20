@@ -39,7 +39,7 @@ def _make_progress() -> Progress:
         TransferSpeedColumn(),
         TimeRemainingColumn(),
         console=console,
-        transient=True,
+        transient=False,
     )
 
 
@@ -119,22 +119,37 @@ def cmd_push(args) -> None:
         remote_path = remote_path.rstrip('/') + '/' + Path(local_path).name
 
     # ── Transfer ───────────────────────────────────────────────────────────────
-    filename    = Path(local_path).name
-    prog_ctx    = _make_progress()
-    task_id_ref = [None]
-
-    def progress_cb(transferred: int, total: int) -> None:
-        if task_id_ref[0] is None:
-            task_id_ref[0] = prog_ctx.add_task(f'Pushing  {filename}', total=total)
-        prog_ctx.update(task_id_ref[0], completed=transferred, total=total)
-
     console.print()
-    try:
-        with prog_ctx:
-            server.push(local_path, remote_path, progress=progress_cb)
-        console.print(f'[green]✓[/] Uploaded to [bold]{name}:{remote_path}[/]')
-    except Exception as exc:
-        console.print(f'[red]✗ Push failed:[/] {exc}')
-        sys.exit(1)
-    finally:
-        server.disconnect()
+
+    with _make_progress() as progress:
+        def _do_push(l_path: str, r_path: str):
+            lp = Path(l_path)
+            if lp.is_dir():
+                # Ensure remote directory exists
+                try:
+                    server.mkdir(r_path)
+                except: pass # It might already exist
+                
+                for entry in lp.iterdir():
+                    sub_l = str(entry)
+                    sub_r = r_path.rstrip('/') + '/' + str(entry.name)
+                    _do_push(sub_l, sub_r)
+            else:
+                # It's a file
+                fname = lp.name
+                total_size = lp.stat().st_size
+                task_id = progress.add_task(f"Pushing {fname}", total=total_size)
+                
+                def cb(transferred, total):
+                    progress.update(task_id, completed=transferred, total=total)
+                
+                server.push(l_path, r_path, progress=cb)
+
+        try:
+            _do_push(local_path, remote_path)
+            console.print(f'[green]✓[/] Uploaded to [bold]{name}:{remote_path}[/]')
+        except Exception as exc:
+            console.print(f'[red]✗ Push failed:[/] {exc}')
+            sys.exit(1)
+        finally:
+            server.disconnect()
