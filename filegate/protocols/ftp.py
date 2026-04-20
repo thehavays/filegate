@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
-from .base import BaseServer, DirEntry, EntryType, ProgressCallback
+from .base import BaseServer, FSEntry, EntryType, ProgressCallback
 
 
 class FTPServer(BaseServer):
@@ -57,8 +57,8 @@ class FTPServer(BaseServer):
     def home(self) -> str:
         return self._ftp.pwd()
 
-    def listdir(self, path: str) -> List[DirEntry]:
-        entries: List[DirEntry] = []
+    def listdir(self, path: str) -> List[FSEntry]:
+        entries: List[FSEntry] = []
         try:
             # Use MLSD if available (RFC 3659), otherwise fall back to LIST
             try:
@@ -74,25 +74,22 @@ class FTPServer(BaseServer):
                         etype = EntryType.FILE
                     else:
                         etype = EntryType.UNKNOWN
-                    size_str = facts.get('size')
-                    entries.append(DirEntry(
-                        name=name,
-                        path=entry_path,
+                    entries.append(FSEntry(
+                        name=str(name),
+                        path=path.rstrip('/') + '/' + str(name),
                         type=etype,
-                        size=int(size_str) if size_str else None,
+                        size=int(facts.get('size', 0)),
+                        modified=None  # TODO: parse modified time
                     ))
-            except ftplib.error_perm:
-                # Fall back to NLST — less info but widely supported
-                names = self._ftp.nlst(path)
-                for full_name in names:
-                    name = full_name.split('/')[-1]
+            except Exception:
+                # Fallback to simple nlst()
+                for name in self._ftp.nlst(path):
                     if name in ('.', '..'):
                         continue
-                    entry_path = path.rstrip('/') + '/' + name
-                    entries.append(DirEntry(
-                        name=name,
-                        path=entry_path,
-                        type=EntryType.UNKNOWN,
+                    entries.append(FSEntry(
+                        name=str(name),
+                        path=path.rstrip('/') + '/' + str(name),
+                        type=EntryType.UNKNOWN  # Can't know type without stat
                     ))
         except ftplib.all_errors:
             pass

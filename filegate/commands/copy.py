@@ -2,10 +2,14 @@
 commands/copy.py — Remote-to-remote file transfer logic.
 """
 import sys
+import getpass
 from typing import Tuple
 
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn
+from rich.progress import (
+    Progress, SpinnerColumn, TextColumn, BarColumn, 
+    DownloadColumn, TransferSpeedColumn, TaskProgressColumn, TimeRemainingColumn
+)
 
 import filegate.config as cfg
 from filegate.protocols import get_server_instance
@@ -38,6 +42,15 @@ def cmd_copy(args):
     src_pw = cfg.get_password(src_name)
     dst_pw = cfg.get_password(dst_name)
 
+    # Prompt for passwords if not in keyring and not using SSH keys
+    if not src_pw and not src_conf.get('key_file'):
+        src_pw = getpass.getpass(f"Password for {src_name} ({src_conf['user']}): ")
+    
+    # Only prompt for dst password if it's a different server
+    if src_name != dst_name:
+        if not dst_pw and not dst_conf.get('key_file'):
+            dst_pw = getpass.getpass(f"Password for {dst_name} ({dst_conf['user']}): ")
+
     try:
         with get_server_instance(src_conf) as src_server:
             src_server.connect(src_pw)
@@ -55,41 +68,45 @@ def cmd_copy(args):
                 
                 console.print(f"[blue]Streaming:[/] [bold]{src_name}[/] → [bold]{dst_name}[/] (via memory)")
                 
-                # Check if src is a directory (recursive copy not implemented for stream yet)
-                if src_server.isdir(src_path):
-                    console.print("[yellow]Warning:[/] Recursive cross-server copy via stream is not yet supported.")
-                    console.print("Please copy individual files or use pull/push.")
-                    return
-
-                with src_server.open_file(src_path, 'rb') as f_src, \
-                     dst_server.open_file(dst_path, 'wb') as f_dst:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    DownloadColumn(),
+                    TransferSpeedColumn(),
+                    TimeRemainingColumn(),
+                    console=console
+                ) as progress:
                     
-                    # Try to get size for progress bar
-                    try:
-                        # This depends on protocol implementation of 'stat' or similar
-                        # For now, we'll just stream
-                        total_size = 0
-                        if hasattr(f_src, 'stat'):
-                            total_size = f_src.stat().st_size
-                    except:
-                        total_size = 0
+                    def _do_copy(s_path: str, d_path: str):
+                        if src_server.isdir(s_path):
+                            dst_server.mkdir(d_path)
+                            for entry in src_server.listdir(s_path):
+                                _do_copy(str(entry.path), d_path.rstrip('/') + '/' + str(entry.name))
+                        else:
+                            # It's a file
+                            filename = s_path.split('/')[-1]
+                            with src_server.open_file(s_path, 'rb') as f_src, \
+                                 dst_server.open_file(d_path, 'wb') as f_dst:
+                                
+                                total_size = src_server.get_size(s_path)
+                                
+                                task = progress.add_task(f"Copying {filename}", total=total_size)
+                                while True:
+                                    chunk = f_src.read(128 * 1024)
+                                    if not chunk: break
+                                    f_dst.write(chunk)
+                                    progress.update(task, advance=len(chunk))
+                                progress.remove_task(task)
 
-                    with Progress(
-                        SpinnerColumn(),
-                        TextColumn("[progress.description]{task.description}"),
-                        BarColumn(),
-                        DownloadColumn(),
-                        TransferSpeedColumn(),
-                        console=console
-                    ) as progress:
-                        task = progress.add_task(f"Copying {src_path.split('/')[-1]}", total=total_size)
-                        
-                        while True:
-                            chunk = f_src.read(128 * 1024) # 128KB buffer
-                            if not chunk:
-                                break
-                            f_dst.write(chunk)
-                            progress.update(task, advance=len(chunk))
+                    # If destination is a directory, append source name to it
+                    final_dst = dst_path
+                    if dst_server.isdir(dst_path):
+                        src_basename = src_path.rstrip('/').split('/')[-1]
+                        final_dst = dst_path.rstrip('/') + '/' + src_basename
+
+                    _do_copy(src_path, final_dst)
                 
                 console.print("[green]✓[/] Stream copy complete.")
 

@@ -15,7 +15,7 @@ class EntryType(Enum):
 
 
 @dataclass
-class DirEntry:
+class FSEntry:
     name: str
     path: str          # Full absolute path on the remote server
     type: EntryType
@@ -74,7 +74,7 @@ class BaseServer(ABC):
     # ── Directory operations ───────────────────────────────────────────────────
 
     @abstractmethod
-    def listdir(self, path: str) -> List[DirEntry]:
+    def listdir(self, path: str) -> List[FSEntry]:
         """List the contents of a remote directory."""
 
     @abstractmethod
@@ -88,6 +88,14 @@ class BaseServer(ABC):
     @abstractmethod
     def home(self) -> str:
         """Return the home / default starting directory on the server."""
+
+    @abstractmethod
+    def mkdir(self, path: str) -> None:
+        """Create a remote directory."""
+
+    @abstractmethod
+    def get_size(self, path: str) -> int:
+        """Return the size of a remote file in bytes."""
 
     # ── Transfer operations ────────────────────────────────────────────────────
 

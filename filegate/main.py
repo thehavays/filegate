@@ -196,8 +196,9 @@ def _do_remote_complete(server_name: str, partial: str) -> None:
         sys.exit(0)
 
     password = cfg.get_password(server_name)
-    if not password and not conf.get('key_file') and conf.get('protocol') != 'smb':
-        # Can't interactively prompt during shell completion — skip
+    if not password and not conf.get('key_file'):
+        # Can't interactively prompt during shell completion.
+        # We MUST skip to avoid triggering account lockouts with empty passwords.
         sys.exit(0)
 
     try:

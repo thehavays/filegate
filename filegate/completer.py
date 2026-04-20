@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from .protocols.base import BaseServer, DirEntry, EntryType
+from .protocols.base import BaseServer, FSEntry
 
 
 # ─── Remote completer ──────────────────────────────────────────────────────────
@@ -31,12 +31,12 @@ class RemoteCompleter:
 
     def __init__(self, server: BaseServer) -> None:
         self._server     = server
-        self._cache: dict[str, List[DirEntry]] = {}
+        self._cache: dict[str, List[FSEntry]] = {}
         self._matches: List[str] = []
 
     # ── Internal ───────────────────────────────────────────────────────────────
 
-    def _get_listing(self, directory: str) -> List[DirEntry]:
+    def _get_listing(self, directory: str) -> List[FSEntry]:
         if directory not in self._cache:
             try:
                 self._cache[directory] = self._server.listdir(directory)
@@ -58,7 +58,7 @@ class RemoteCompleter:
         results = []
         for entry in entries:
             if entry.name.startswith(prefix):
-                full = parent.rstrip('/') + '/' + entry.name
+                full = parent.rstrip('/') + '/' + str(entry.name)
                 # Add trailing slash for directories so readline continues
                 if entry.is_dir:
                     full += '/'
@@ -180,14 +180,19 @@ _fgate_filedir() {
 
 _fgate_complete() {
     local cur prev words cword
-    # Use bash-completion library if available
-    if declare -f _init_completion > /dev/null 2>&1; then
-        _init_completion || return
-    else
-        cur="${COMP_WORDS[COMP_CWORD]}"
-        prev="${COMP_WORDS[COMP_CWORD-1]}"
-        words=("${COMP_WORDS[@]}")
-        cword=$COMP_CWORD
+    # Standard bash variables
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    words=("${COMP_WORDS[@]}")
+    cword=$COMP_CWORD
+
+    # MAGIC FIX: Extract the FULL current word from the raw command line.
+    # This ignores colons being 'word breaks' and gives us the full 'server:/path'.
+    local cur_full="${COMP_LINE:0:COMP_POINT}"
+    cur_full="${cur_full##* }"
+    # If we are completing for copy, use the full word
+    if [[ "${words[1]}" == "copy" ]]; then
+        cur="$cur_full"
     fi
 
     local subcommand="${words[1]}"
@@ -195,9 +200,8 @@ _fgate_complete() {
 
     case "$subcommand" in
         copy)
-            local pos=$((cword - 1))
+            # Standard way to handle colons: ensure they don't split words
             if [[ "$cur" == *:* ]]; then
-                # Complete remote path on the chosen server
                 local server="${cur%%:*}"
                 local rpath="${cur#*:}"
                 local completions
@@ -206,6 +210,11 @@ _fgate_complete() {
                 for comp in "${completions[@]}"; do
                     COMPREPLY+=("${server}:${comp}")
                 done
+                
+                # Use this helper if available to prevent double-prefixing
+                if declare -f __ltrim_colon_completions > /dev/null 2>&1; then
+                    __ltrim_colon_completions "$cur"
+                fi
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             else
                 # Complete server name + colon

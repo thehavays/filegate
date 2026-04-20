@@ -193,6 +193,14 @@ def cmd_test(args) -> None:
         home = server.home()
         server.disconnect()
         console.print(f'[green]✓ Connection successful![/]  Home: [bold]{home}[/]')
+
+        # If we had to prompt for a password, ask to save it
+        if password and not cfg.get_password(name) and not conf.get('key_file'):
+            console.print()
+            save = input(f'Save password for "{name}" to your secure keyring? [y/N] ').strip().lower()
+            if save == 'y':
+                cfg.set_password(name, password)
+                console.print('[green]✓[/] Password saved. You won\'t be prompted again.')
     except Exception as exc:
         console.print(f'[red]✗ Connection failed:[/] {exc}')
         sys.exit(1)
