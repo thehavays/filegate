@@ -23,7 +23,7 @@ grade: stable
 confinement: strict
 
 apps:
-  fgate:
+  filegate:
     command: bin/fgate
     completer: bash_completion
     plugs:
