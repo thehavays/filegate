@@ -24,7 +24,7 @@ confinement: strict
 
 apps:
   filegate:
-    command: bin/fgate
+    command: bin/filegate
     completer: bash_completion
     plugs:
       - network
