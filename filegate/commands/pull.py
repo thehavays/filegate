@@ -112,7 +112,7 @@ def cmd_pull(args) -> None:
 
     # If the local destination is an existing directory, place the remote
     # item *inside* it (same behaviour as cp / scp / rsync).
-    # e.g.  fsm pull server /remote/file.txt ./mydir/
+    # e.g.  filegate pull server /remote/file.txt ./mydir/
     #        → saves to  ./mydir/file.txt
     local_p = Path(local_path)
     if local_p.is_dir():

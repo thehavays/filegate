@@ -49,7 +49,7 @@ class SFTPServer(BaseServer):
             except paramiko.ssh_exception.PasswordRequiredException:
                 raise ValueError(
                     f"SSH key '{key_file}' requires a passphrase. "
-                    "Add it with: fsm add --pass-type passphrase"
+                    "Add it with: filegate add --pass-type passphrase"
                 )
             connect_kwargs['pkey'] = pkey
         elif password:

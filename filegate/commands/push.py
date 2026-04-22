@@ -113,7 +113,7 @@ def cmd_push(args) -> None:
 
     # If the remote destination ends with '/', treat it as a directory and
     # place the local item inside it  (same behaviour as cp / scp / rsync).
-    # e.g.  fsm push server file.txt /remote/dir/
+    # e.g.  filegate push server file.txt /remote/dir/
     #        → uploads to  /remote/dir/file.txt
     if remote_path.endswith('/'):
         remote_path = remote_path.rstrip('/') + '/' + Path(local_path).name
