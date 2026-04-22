@@ -1,6 +1,6 @@
 name: filegate
 base: core22
-version: '1.1.3'
+version: '1.1.4'
 title: FileGate
 icon: snap/gui/icon.png
 summary: Multi-protocol file server manager with TAB completion
