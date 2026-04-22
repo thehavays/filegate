@@ -163,6 +163,9 @@ def generate_bash_completion() -> str:
 # Appends '/' to directories so TAB keeps drilling into subdirs without a space.
 _filegate_filedir() {
     local cur="$1"
+    # Ensure bash handles escaping of spaces/special chars in matches
+    compopt -o filenames 2>/dev/null
+
     if declare -f _filedir > /dev/null 2>&1; then
         # Use bash-completion library if present (handles edge-cases best)
         _filedir
@@ -180,30 +183,67 @@ _filegate_filedir() {
 
 _filegate_complete() {
     local cur prev words cword
-    # Standard bash variables
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    words=("${COMP_WORDS[@]}")
-    cword=$COMP_CWORD
-
-    # MAGIC FIX: Extract the FULL current word from the raw command line.
-    # This ignores colons being 'word breaks' and gives us the full 'server:/path'.
-    local cur_full="${COMP_LINE:0:COMP_POINT}"
-    cur_full="${cur_full##* }"
-    # If we are completing for copy, use the full word
-    if [[ "${words[1]}" == "copy" ]]; then
-        cur="$cur_full"
+    if declare -f _init_completion > /dev/null 2>&1; then
+        # Initialize with colon as a non-breaking character
+        _init_completion -n : || return
+    else
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+        words=("${COMP_WORDS[@]}")
+        cword=$COMP_CWORD
     fi
 
-    local subcommand="${words[1]}"
+    # Find subcommand and its index
+    local subcommand=""
+    local sub_idx=0
+    for ((i=1; i <= cword; i++)); do
+        if [[ " list add remove test pull push copy shell install-completion " == *" ${words[i]} "* ]]; then
+            subcommand="${words[i]}"
+            sub_idx=$i
+            break
+        fi
+    done
+    [[ -z "$subcommand" ]] && subcommand="${words[1]}"
+    [[ $sub_idx -eq 0 ]] && sub_idx=1
+
+    # Calculate logical position (merging words joined by backslashes)
+    local pos=0
+    for ((i=sub_idx+1; i <= cword; i++)); do
+        if [[ $i -eq $((sub_idx+1)) || "${words[i-1]}" != *\\ ]]; then
+            ((pos++))
+        fi
+    done
+
+    # Helper: get N-th logical argument after subcommand
+    _get_logical_arg() {
+        local target=$1
+        local current=0
+        local res=""
+        for ((j=sub_idx+1; j < ${#words[@]}; j++)); do
+            if [[ $j -eq $((sub_idx+1)) || "${words[j-1]}" != *\\ ]]; then
+                ((current++))
+            fi
+            if [[ $current -eq $target ]]; then
+                res="$res${words[j]}"
+                if [[ "${words[j]}" != *\\ ]]; then
+                    echo "${res//\\ / }" # Unescape spaces
+                    return
+                fi
+            fi
+        done
+    }
+
     local commands="list add remove test pull push copy shell install-completion"
 
     case "$subcommand" in
         copy)
-            # Standard way to handle colons: ensure they don't split words
-            if [[ "$cur" == *:* ]]; then
-                local server="${cur%%:*}"
-                local rpath="${cur#*:}"
+            # Ensure we use the full word even if it contains colons
+            local cur_full="${COMP_LINE:0:COMP_POINT}"
+            cur_full="${cur_full##* }"
+            
+            if [[ "$cur_full" == *:* ]]; then
+                local server="${cur_full%%:*}"
+                local rpath="${cur_full#*:}"
                 local completions
                 mapfile -t completions < <("${COMP_WORDS[0]}" _complete remote "$server" "$rpath" 2>/dev/null)
                 COMPREPLY=()
@@ -211,19 +251,20 @@ _filegate_complete() {
                     COMPREPLY+=("${server}:${comp}")
                 done
                 
-                # Use this helper if available to prevent double-prefixing
+                # Prevent double-prefixing if bash-completion is present
                 if declare -f __ltrim_colon_completions > /dev/null 2>&1; then
-                    __ltrim_colon_completions "$cur"
+                    __ltrim_colon_completions "$cur_full"
                 fi
+                compopt -o filenames 2>/dev/null
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             else
-                # Complete server name + colon
                 local servers
                 servers=$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)
                 COMPREPLY=($(compgen -W "$servers" -S ":" -- "$cur"))
                 compopt -o nospace
             fi
             ;;
+
         add)
             case "$prev" in
                 --protocol|-p)
@@ -243,32 +284,27 @@ _filegate_complete() {
             ;;
 
         pull)
-            local pos=$((cword - 1))
             if [[ $pos -eq 1 ]]; then
-                # Complete server name
                 COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
-                # Complete remote path on the chosen server
-                local server="${words[2]}"
+                local server=$(_get_logical_arg 1)
                 mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
+                compopt -o filenames 2>/dev/null
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             else
-                # Complete local destination (directory-aware)
                 _filegate_filedir "$cur"
             fi
             ;;
 
         push)
-            local pos=$((cword - 1))
             if [[ $pos -eq 1 ]]; then
                 COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
-                # Complete local source (directory-aware)
                 _filegate_filedir "$cur"
             else
-                # Complete remote destination
-                local server="${words[2]}"
+                local server=$(_get_logical_arg 1)
                 mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
+                compopt -o filenames 2>/dev/null
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             fi
             ;;
