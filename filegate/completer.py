@@ -214,6 +214,17 @@ _filegate_complete() {
         fi
     done
 
+    # Helper: get the full logical word at current cursor position
+    _filegate_get_cur() {
+        local res="${words[cword]}"
+        local i=$((cword-1))
+        while [[ $i -ge $((sub_idx+1)) && "${words[i]}" == *\\ ]]; do
+            res="${words[i]} ${res}"
+            ((i--))
+        done
+        echo "${res//\\ / }"
+    }
+
     # Helper: get N-th logical argument after subcommand
     _get_logical_arg() {
         local target=$1
@@ -222,28 +233,25 @@ _filegate_complete() {
         for ((j=sub_idx+1; j < ${#words[@]}; j++)); do
             if [[ $j -eq $((sub_idx+1)) || "${words[j-1]}" != *\\ ]]; then
                 ((current++))
+                res="${words[j]}"
+            else
+                res="$res ${words[j]}"
             fi
-            if [[ $current -eq $target ]]; then
-                res="$res${words[j]}"
-                if [[ "${words[j]}" != *\\ ]]; then
-                    echo "${res//\\ / }" # Unescape spaces
-                    return
-                fi
+            if [[ $current -eq $target && "${words[j]}" != *\\ ]]; then
+                echo "${res//\\ / }"
+                return
             fi
         done
     }
 
+    local cur_logical=$(_filegate_get_cur)
     local commands="list add remove test pull push copy shell install-completion"
 
     case "$subcommand" in
         copy)
-            # Ensure we use the full word even if it contains colons
-            local cur_full="${COMP_LINE:0:COMP_POINT}"
-            cur_full="${cur_full##* }"
-            
-            if [[ "$cur_full" == *:* ]]; then
-                local server="${cur_full%%:*}"
-                local rpath="${cur_full#*:}"
+            if [[ "$cur_logical" == *:* ]]; then
+                local server="${cur_logical%%:*}"
+                local rpath="${cur_logical#*:}"
                 local completions
                 mapfile -t completions < <("${COMP_WORDS[0]}" _complete remote "$server" "$rpath" 2>/dev/null)
                 COMPREPLY=()
@@ -253,7 +261,7 @@ _filegate_complete() {
                 
                 # Prevent double-prefixing if bash-completion is present
                 if declare -f __ltrim_colon_completions > /dev/null 2>&1; then
-                    __ltrim_colon_completions "$cur_full"
+                    __ltrim_colon_completions "$cur_logical"
                 fi
                 compopt -o filenames 2>/dev/null
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
@@ -288,7 +296,7 @@ _filegate_complete() {
                 COMPREPLY=($(compgen -W "$("${COMP_WORDS[0]}" list --names-only 2>/dev/null)" -- "$cur"))
             elif [[ $pos -eq 2 ]]; then
                 local server=$(_get_logical_arg 1)
-                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
+                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur_logical" 2>/dev/null)
                 compopt -o filenames 2>/dev/null
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             else
@@ -303,7 +311,7 @@ _filegate_complete() {
                 _filegate_filedir "$cur"
             else
                 local server=$(_get_logical_arg 1)
-                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur" 2>/dev/null)
+                mapfile -t COMPREPLY < <("${COMP_WORDS[0]}" _complete remote "$server" "$cur_logical" 2>/dev/null)
                 compopt -o filenames 2>/dev/null
                 [[ ${#COMPREPLY[@]} -eq 1 && "${COMPREPLY[0]}" == */ ]] && compopt -o nospace
             fi
