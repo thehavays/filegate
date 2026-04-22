@@ -56,7 +56,7 @@ def cmd_list(args) -> None:
         return
 
     if not servers:
-        console.print('[yellow]No servers registered.[/]  Use [bold]fsm add[/] to add one.')
+        console.print('[yellow]No servers registered.[/]  Use [bold]filegate add[/] to add one.')
         return
 
     table = Table(
@@ -114,7 +114,7 @@ def cmd_add(args) -> None:
     existing = cfg.get_server(name)
     if existing:
         console.print(f'[yellow]Server [bold]{name}[/] already exists.[/]  '
-                      f'Run [bold]fsm remove {name}[/] first to replace it.')
+                      f'Run [bold]filegate remove {name}[/] first to replace it.')
         sys.exit(1)
 
     host_clean = _clean_host(args.host)   # strip any accidental UNC prefix
