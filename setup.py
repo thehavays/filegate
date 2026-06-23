@@ -10,6 +10,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'paramiko>=3.0.0',
+        'cryptography>=41.0.0',
         'smbprotocol>=1.12.0',
         'keyring>=24.0.0',
         'rich>=13.0.0',
