@@ -1,5 +1,5 @@
 """
-completer.py — TAB completion engine for FSM.
+completer.py — TAB completion engine for FileGate.
 
 Provides:
   1. RemoteCompleter   — readline completer for remote paths (interactive mode)
