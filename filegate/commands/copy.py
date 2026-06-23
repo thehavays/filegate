@@ -24,6 +24,16 @@ def parse_remote_path(path_str: str) -> Tuple[str, str]:
     return server, path or '/'
 
 
+def _format_size(size_bytes: int) -> str:
+    if size_bytes >= 1_073_741_824:
+        return f"{size_bytes / 1_073_741_824:.1f} GB"
+    if size_bytes >= 1_048_576:
+        return f"{size_bytes / 1_048_576:.1f} MB"
+    if size_bytes >= 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes} B"
+
+
 def cmd_copy(args):
     console = Console()
     src_name, src_path = parse_remote_path(args.src)
@@ -58,7 +68,32 @@ def cmd_copy(args):
             # Case 1: Intra-server copy (Fastest)
             if src_name == dst_name:
                 console.print(f"[blue]Optimizing:[/] Using server-side copy on [bold]{src_name}[/]...")
-                src_server.copy_within(src_path, dst_path)
+                
+                def _do_intra_copy(s_path: str, d_path: str):
+                    if src_server.isdir(s_path):
+                        # Ensure destination directory exists
+                        if not src_server.exists(d_path):
+                            src_server.mkdir(d_path)
+                        elif not src_server.isdir(d_path):
+                            raise ValueError(f"Destination {d_path} already exists and is a file.")
+                        
+                        for entry in src_server.listdir(s_path):
+                            _do_intra_copy(str(entry.path), d_path.rstrip('/') + '/' + str(entry.name))
+                    else:
+                        # It's a file
+                        final_d = d_path
+                        if src_server.isdir(d_path):
+                            src_basename = s_path.rstrip('/').split('/')[-1]
+                            final_d = d_path.rstrip('/') + '/' + src_basename
+                        
+                        src_server.copy_within(s_path, final_d)
+
+                final_dst = dst_path
+                if src_server.isdir(dst_path):
+                    src_basename = src_path.rstrip('/').split('/')[-1]
+                    final_dst = dst_path.rstrip('/') + '/' + src_basename
+
+                _do_intra_copy(src_path, final_dst)
                 console.print("[green]✓[/] Copy complete.")
                 return
 
@@ -99,6 +134,7 @@ def cmd_copy(args):
                                     f_dst.write(chunk)
                                     progress.update(task, advance=len(chunk))
                                 progress.remove_task(task)
+                                console.print(f"[green]✓[/] Copied [bold]{filename}[/] ({_format_size(total_size)})")
 
                     # If destination is a directory, append source name to it
                     final_dst = dst_path

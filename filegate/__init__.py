@@ -1,2 +1,2 @@
-__version__ = '1.1.3'
-__author__ = 'FSM'
+__version__ = '1.1.7'
+__author__ = 'FileGate'

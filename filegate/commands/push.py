@@ -29,6 +29,16 @@ from filegate.protocols import get_server_instance
 console = Console()
 
 
+def _format_size(size_bytes: int) -> str:
+    if size_bytes >= 1_073_741_824:
+        return f"{size_bytes / 1_073_741_824:.1f} GB"
+    if size_bytes >= 1_048_576:
+        return f"{size_bytes / 1_048_576:.1f} MB"
+    if size_bytes >= 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes} B"
+
+
 def _make_progress() -> Progress:
     return Progress(
         SpinnerColumn(),
@@ -144,6 +154,8 @@ def cmd_push(args) -> None:
                     progress.update(task_id, completed=transferred, total=total)
                 
                 server.push(l_path, r_path, progress=cb)
+                progress.remove_task(task_id)
+                console.print(f"[green]✓[/] Pushed [bold]{fname}[/] ({_format_size(total_size)})")
 
         try:
             _do_push(local_path, remote_path)
