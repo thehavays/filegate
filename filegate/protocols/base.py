@@ -36,7 +36,7 @@ ProgressCallback = Callable[[int, int], None]   # (transferred_bytes, total_byte
 
 class BaseServer(ABC):
     """
-    Abstract base for all FSM server backends.
+    Abstract base for all FileGate server backends.
 
     Subclasses must implement the abstract methods below.
     All paths are POSIX-style regardless of the underlying protocol.

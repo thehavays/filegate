@@ -34,7 +34,7 @@ from filegate.protocols.base import BaseServer, FSEntry, EntryType
 console = Console()
 
 SHELL_HELP = """
-[bold cyan]FSM Interactive Shell Commands[/]
+[bold cyan]FileGate Interactive Shell Commands[/]
 
   [yellow]ls[/] [path]         List remote directory contents
   [yellow]cd[/] <path>         Change remote directory
