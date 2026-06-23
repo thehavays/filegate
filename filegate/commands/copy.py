@@ -24,6 +24,16 @@ def parse_remote_path(path_str: str) -> Tuple[str, str]:
     return server, path or '/'
 
 
+def _format_size(size_bytes: int) -> str:
+    if size_bytes >= 1_073_741_824:
+        return f"{size_bytes / 1_073_741_824:.1f} GB"
+    if size_bytes >= 1_048_576:
+        return f"{size_bytes / 1_048_576:.1f} MB"
+    if size_bytes >= 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes} B"
+
+
 def cmd_copy(args):
     console = Console()
     src_name, src_path = parse_remote_path(args.src)
@@ -124,6 +134,7 @@ def cmd_copy(args):
                                     f_dst.write(chunk)
                                     progress.update(task, advance=len(chunk))
                                 progress.remove_task(task)
+                                console.print(f"[green]✓[/] Copied [bold]{filename}[/] ({_format_size(total_size)})")
 
                     # If destination is a directory, append source name to it
                     final_dst = dst_path
