@@ -26,8 +26,8 @@ _filegate_filedir() {
 _filegate_complete() {
     local cur prev words cword
     if declare -f _init_completion > /dev/null 2>&1; then
-        # Initialize with colon as a non-breaking character
-        _init_completion -n : || return
+        # Initialize with colon and parentheses as non-breaking characters
+        _init_completion -n ":()" || return
     else
         cur="${COMP_WORDS[COMP_CWORD]}"
         prev="${COMP_WORDS[COMP_CWORD-1]}"
