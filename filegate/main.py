@@ -182,6 +182,22 @@ def main() -> None:
         sys.exit(1)
 
 
+def _unescape_path(s: str) -> str:
+    res = []
+    escape = False
+    for char in s:
+        if escape:
+            res.append(char)
+            escape = False
+        elif char == '\\':
+            escape = True
+        else:
+            res.append(char)
+    if escape:
+        res.append('\\')
+    return ''.join(res)
+
+
 def _do_remote_complete(server_name: str, partial: str) -> None:
     """
     Print remote path completions for *partial* on *server_name*.
@@ -191,6 +207,7 @@ def _do_remote_complete(server_name: str, partial: str) -> None:
     from filegate.protocols import get_server_instance
     from filegate.completer import RemoteCompleter
 
+    partial = _unescape_path(partial)
     conf = cfg.get_server(server_name)
     if not conf:
         sys.exit(0)
