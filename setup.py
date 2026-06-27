@@ -18,7 +18,6 @@ setup(
     entry_points={
         'console_scripts': [
             'filegate=filegate.main:main',
-            'fgate=filegate.main:main',
         ],
     },
     classifiers=[
