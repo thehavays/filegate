@@ -174,4 +174,4 @@ _filegate_complete() {
 }
 
 # Apply to all possible command names
-complete -F _filegate_complete filegate fgate filegate.fgate
+complete -F _filegate_complete filegate

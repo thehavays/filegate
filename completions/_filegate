@@ -1,4 +1,4 @@
-#compdef filegate fgate
+#compdef filegate
 # FileGate zsh completion
 
 _filegate() {

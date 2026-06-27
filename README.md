@@ -58,8 +58,6 @@ pipx install .
 
 ## Quick Start
 
-You can use either `filegate` or the shorthand `fgate`. Both work identically!
-
 ```bash
 # Register servers
 filegate add mynas  --host 192.168.1.10 --user admin  --protocol sftp --key ~/.ssh/id_rsa

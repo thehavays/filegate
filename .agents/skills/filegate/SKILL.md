@@ -5,11 +5,11 @@ description: Reference and instructions for running and using the filegate CLI a
 
 # FileGate Assistant
 
-This skill provides reference instructions for using the FileGate (`filegate` or `fgate`) application.
+This skill provides reference instructions for using the FileGate (`filegate`) application.
 
 ## CLI Usage Reference
 
-Antigravity can run the `filegate` or `fgate` command directly to invoke various subcommands. Below is the command reference.
+Antigravity can run the `filegate` command directly to invoke various subcommands. Below is the command reference.
 
 ### 1. Registering Servers
 To connect to remote file servers, you must first register them:
