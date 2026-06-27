@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='filegate',
-    version='1.1.8',
+    version='1.1.9',
     description='FileGate — connect, browse, pull and push files on remote file servers (SFTP, FTP, SMB)',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
@@ -18,7 +18,6 @@ setup(
     entry_points={
         'console_scripts': [
             'filegate=filegate.main:main',
-            'fgate=filegate.main:main',
         ],
     },
     classifiers=[

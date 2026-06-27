@@ -331,12 +331,12 @@ _filegate_complete() {
     esac
 }
 
-complete -F _filegate_complete filegate fgate filegate.fgate
+complete -F _filegate_complete filegate
 """
 
 
 def generate_zsh_completion() -> str:
-    return r"""#compdef filegate fgate
+    return r"""#compdef filegate
 # FileGate zsh completion
 
 _filegate() {
