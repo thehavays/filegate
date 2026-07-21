@@ -41,13 +41,6 @@ sudo snap install filegate
 sudo snap connect filegate:password-manager-service
 ```
 
-### 🍎 Homebrew (Recommended for macOS)
-
-```bash
-brew tap thehavays/tap
-brew install filegate
-```
-
 ### 🐍 Pipx (Python/Source)
 
 ```bash
@@ -108,6 +101,7 @@ source ~/.bash_completion.d/filegate
 | `filegate test <name>` | Test connection to a server |
 | `filegate pull <server> [remote] [local]` | Download file/directory |
 | `filegate push <server> [local] [remote]` | Upload file/directory |
+| `filegate copy <src> <dst>` | Copy files between servers (remote-to-remote) |
 | `filegate shell <name>` | Interactive shell with full TAB completion |
 | `filegate install-completion [--shell bash|zsh]` | Install shell completion |
 
@@ -120,7 +114,7 @@ source ~/.bash_completion.d/filegate
 | SSH/SFTP | `--protocol sftp` | 22 | Key or password auth |
 | FTP | `--protocol ftp` | 21 | Password auth |
 | FTPS | `--protocol ftps` | 21 | FTP over TLS |
-| SMB2/3 | `--protocol smb` | 445 | Use `--share` for default share |
+| SMB2/3 | `--protocol smb` | 445 | Use `--share` for default share, optionally `--domain` |
 
 ---
 
@@ -142,6 +136,7 @@ filegate pull mynas /home/admin/documents/
 
 Servers are stored in `~/.config/filegate/servers.json`.  
 Passwords are stored in your system keyring (GNOME Keyring, KWallet, etc.) — **never in plaintext**.
+When adding a server without an SSH key, you will be prompted to enter the password securely, and it will be saved to your keyring for future use.
 
 ---
 
