@@ -24,6 +24,23 @@ wheels/
 # Virtual Environment
 venv/
 ENV/
+.venv/
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Testing & Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Snapcraft
+*.snap
+stage/
+prime/
+.snapcraft/
 
 # IDEs
 .idea/
