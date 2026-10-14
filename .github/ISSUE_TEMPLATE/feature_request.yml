@@ -1,0 +1,25 @@
+name: 💡 Feature Request
+description: Propose a new feature, protocol integration, or enhancement for FileGate.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a problem or limitation?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Feature
+      description: Describe how you envision the feature working.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any CLI command examples, server setups, or alternatives considered.
+    validations:
+      required: false
